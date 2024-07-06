@@ -10,6 +10,7 @@ import {
 import { RetrievalQAChain } from 'langchain/chains';
 import type { BaseLanguageModel } from '@langchain/core/language_models/base';
 import type { BaseRetriever } from '@langchain/core/retrievers';
+import type { BaseChatMemory } from '@langchain/community/memory/chat_memory';
 import { getTemplateNoticeField } from '../../../utils/sharedFields';
 import { getPromptInputByType } from '../../../utils/helpers';
 import { getTracingConfig } from '../../../utils/tracing';
@@ -54,6 +55,12 @@ export class ChainRetrievalQa implements INodeType {
 				maxConnections: 1,
 				type: NodeConnectionType.AiRetriever,
 				required: true,
+			},
+			{
+				displayName: 'Memory',
+				maxConnections: 1,
+				type: NodeConnectionType.AiMemory,
+				required: false,
 			},
 		],
 		outputs: [NodeConnectionType.Main],
@@ -153,8 +160,13 @@ export class ChainRetrievalQa implements INodeType {
 			0,
 		)) as BaseRetriever;
 
+		const memory = (await this.getInputConnectionData(
+			NodeConnectionType.AiMemory,
+			0,
+		)) as BaseChatMemory | undefined;
+
 		const items = this.getInputData();
-		const chain = RetrievalQAChain.fromLLM(model, retriever);
+		const chain = RetrievalQAChain.fromLLM(model, retriever, { memory });
 
 		const returnData: INodeExecutionData[] = [];
 
